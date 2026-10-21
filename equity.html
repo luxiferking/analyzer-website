@@ -62,20 +62,28 @@
     <!-- ═══════════════════════════════════════════════════ -->
     <!-- SIDEBAR                                              -->
     <!-- ═══════════════════════════════════════════════════ -->
-    <aside class="w-20 border-r border-slate-800 bg-slate-900 flex flex-col items-center py-6 shrink-0 z-20">
-        <div class="w-11 h-11 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center text-white mb-10 shadow-lg shadow-emerald-500/30">
+        <!-- Sidebar (Unified) -->
+    <aside class="w-20 border-r border-slate-800 bg-slate-900 flex flex-col items-center py-6 shrink-0">
+        <!-- Logo (Green for Equity) -->
+        <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white mb-10 shadow-lg shadow-emerald-500/30">
             <i class="fa-solid fa-plane-departure text-lg"></i>
         </div>
-
-        <nav class="flex flex-col gap-6 w-full items-center">
-            <a href="index.html" class="text-slate-500 hover:text-slate-300 p-2.5 rounded-lg transition-all hover:bg-slate-800/50" title="Predictor">
-                <i class="fa-solid fa-house text-lg"></i>
+        <nav class="flex flex-col gap-8 w-full items-center">
+            <!-- Home -->
+            <a href="index.html" class="text-slate-500 hover:text-slate-300 p-2 rounded-lg transition-colors" title="Home">
+                <i class="fa-solid fa-house text-xl"></i>
             </a>
-            <a href="options.html" class="text-slate-500 hover:text-slate-300 p-2.5 rounded-lg transition-all hover:bg-slate-800/50" title="Options">
-                <i class="fa-regular fa-file-lines text-lg"></i>
+            <!-- Pro Options -->
+            <a href="options.html" class="text-slate-500 hover:text-slate-300 p-2 rounded-lg transition-colors" title="Pro Options Scanner">
+                <i class="fa-regular fa-file-lines text-xl"></i>
             </a>
-            <a href="equity.html" class="text-emerald-400 bg-emerald-500/10 p-2.5 rounded-lg transition-colors relative" title="Equity Intraday">
-                <i class="fa-solid fa-chart-line text-lg"></i>
+            <!-- Pure Momentum -->
+            <a href="pure.html" class="text-slate-500 hover:text-slate-300 p-2 rounded-lg transition-colors" title="Pure Momentum Scanner">
+                <i class="fa-solid fa-bolt text-xl"></i>
+            </a>
+            <!-- Equity (Active) -->
+            <a href="equity.html" class="text-emerald-400 bg-emerald-500/10 p-2 rounded-lg transition-colors relative" title="Equity Intraday">
+                <i class="fa-solid fa-chart-simple text-xl"></i>
                 <div class="absolute -left-4 top-1/2 -translate-y-1/2 w-1 h-6 bg-emerald-500 rounded-r-md"></div>
             </a>
         </nav>
