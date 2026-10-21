@@ -8,7 +8,7 @@ app = FastAPI()
 # 🚨 FIXED CORS SETTINGS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=["https://luxiferking.github.io"],  # Allows all origins
     allow_credentials=False, # MUST BE FALSE WHEN USING "*"
     allow_methods=["*"],
     allow_headers=["*"],

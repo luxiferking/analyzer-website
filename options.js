@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // 2. Call the Python Backend
             // Make sure your python server is running on port 8000!
-            const response = await fetch('http://127.0.0.1:12345/api/scan');
+            const response = await fetch('https://analyzer-website-y70x.onrender.com/api/scan');
             const data = await response.json();
 
             // 3. Hide Loading State
