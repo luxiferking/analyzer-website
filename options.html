@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PatternPilot — Options Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        
+        /* Terminal Style */
+        .terminal-box {
+            background-color: #000000;
+            border: 1px solid #1e293b;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.875rem;
+            color: #10b981; /* Emerald green */
+            white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 350px;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-20 border-r border-slate-800 bg-slate-900 flex flex-col items-center py-6 shrink-0">
+        <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white mb-10 shadow-lg shadow-indigo-500/30">
+            <i class="fa-solid fa-arrow-trend-up text-lg"></i>
+        </div>
+        <nav class="flex flex-col gap-8 w-full items-center">
+            <a href="index.html" class="text-slate-500 hover:text-slate-300 p-2 rounded-lg transition-colors">
+                <i class="fa-solid fa-house text-xl"></i>
+            </a>
+            <a href="options.html" class="text-indigo-400 bg-indigo-500/10 p-2 rounded-lg transition-colors relative">
+                <i class="fa-regular fa-file-lines text-xl"></i>
+                <div class="absolute -left-4 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-500 rounded-r-md"></div>
+            </a>
+            <a href="#" class="text-slate-500 hover:text-slate-300 p-2 rounded-lg transition-colors">
+                <i class="fa-solid fa-chart-simple text-xl"></i>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col bg-slate-950 relative overflow-y-auto">
+        <header class="h-20 flex items-center justify-between px-8 bg-slate-900/50 border-b border-slate-800 backdrop-blur-sm z-10 sticky top-0">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
+                    <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <span class="text-xs font-medium text-slate-300">Market Live</span>
+                </div>
+                <h1 class="text-xl font-semibold text-white">PatternPilot · Options Terminal</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <button class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full font-medium text-sm transition-all shadow-lg shadow-indigo-500/20 flex flex-col items-center leading-tight">
+                    <span>Upgrade!</span>
+                    <span class="text-[10px] text-indigo-200 font-bold tracking-wider">98% OFF</span>
+                </button>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-emerald-500 border-2 border-slate-800 shadow-sm cursor-pointer"></div>
+            </div>
+        </header>
+
+        <div class="flex-1 p-8 grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl w-full mx-auto">
+            <!-- LEFT COLUMN: Auto Scanner Controls -->
+            <div class="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl h-fit">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-8 h-8 bg-indigo-500/20 rounded-lg flex items-center justify-center text-indigo-400">
+                        <i class="fa-solid fa-robot text-sm"></i>
+                    </div>
+                    <h2 class="text-lg font-semibold text-white">Jarvis Auto-Scanner</h2>
+                </div>
+                <p class="text-xs text-slate-400 mb-6">Scans NIFTY, BANKNIFTY & SENSEX for the highest probability options setup using live data.</p>
+
+                <!-- Market Status Dashboard -->
+                <div class="space-y-3 mb-8">
+                    <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
+                        <span class="text-sm font-medium text-slate-300">NIFTY 50</span>
+                        <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
+                        <span class="text-sm font-medium text-slate-300">BANKNIFTY</span>
+                        <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
+                        <span class="text-sm font-medium text-slate-300">SENSEX</span>
+                        <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
+                    </div>
+                </div>
+
+                <button id="scanBtn" class="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span id="btnText">Scan Market Now</span>
+                </button>
+            </div>
+
+            <!-- RIGHT COLUMN: Results Dashboard -->
+            <div class="lg:col-span-2 flex flex-col gap-6">
+                
+                <!-- Waiting State -->
+                <div id="waitingState" class="bg-slate-900/50 border border-slate-800 border-dashed rounded-3xl p-12 flex flex-col items-center justify-center text-center h-full min-h-[500px]">
+                    <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center text-slate-600 mb-4 animate-pulse">
+                        <i class="fa-solid fa-satellite-dish text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-slate-300">Awaiting Analysis</h3>
+                    <p class="text-sm text-slate-500 mt-2 max-w-xs">Click "Scan Market Now" to let Jarvis analyze live charts, volume, and option chains.</p>
+                </div>
+
+                <!-- Loading State (Hidden by default) -->
+                <div id="loadingState" class="hidden bg-slate-900/50 border border-slate-800 border-dashed rounded-3xl p-12 flex-col items-center justify-center text-center h-full min-h-[500px]">
+                    <div class="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <h3 class="text-lg font-medium text-indigo-400">Scanning Live Market...</h3>
+                    <p class="text-sm text-slate-500 mt-2 max-w-xs">Checking candlestick patterns, IV, PCR, and strict risk limits.</p>
+                </div>
+
+                <!-- Results Container (Hidden by default) -->
+                <div id="resultsContainer" class="hidden flex-col gap-6 h-full">
+                    
+                    <!-- Top Card: Strategy & Action -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex justify-between items-center shadow-xl">
+                        <div>
+                            <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">Detected Setup</p>
+                            <p id="resAction" class="text-2xl font-bold text-white">--</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">Underlying</p>
+                            <p id="resSymbol" class="text-xl font-bold text-indigo-400">--</p>
+                        </div>
+                    </div>
+
+                    <!-- Three Stat Cards -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center shadow-lg relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-full h-1 bg-indigo-500"></div>
+                            <p class="text-xs text-slate-400 uppercase font-semibold mb-2">Entry Premium</p>
+                            <p id="resEntry" class="text-2xl font-bold text-white">--</p>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center shadow-lg relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-full h-1 bg-rose-500"></div>
+                            <p class="text-xs text-slate-400 uppercase font-semibold mb-2">Stop Loss</p>
+                            <p id="resStopLoss" class="text-2xl font-bold text-rose-400">--</p>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center shadow-lg relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-full h-1 bg-emerald-500"></div>
+                            <p class="text-xs text-slate-400 uppercase font-semibold mb-2">Target Premium</p>
+                            <p id="resTakeProfit" class="text-2xl font-bold text-emerald-400">--</p>
+                        </div>
+                    </div>
+
+                    <!-- Terminal Output Box -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex-1 flex flex-col">
+                        <h3 class="text-sm font-semibold text-indigo-400 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-terminal"></i> Jarvis Terminal Output
+                        </h3>
+                        <pre id="terminalOutput" class="terminal-box flex-1">--</pre>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+    <script src="options.js"></script>
+</body>
+</html>

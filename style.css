@@ -1,0 +1,14 @@
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Custom styling for the dashed drop zone */
+    .drop-zone {
+        border: 2px dashed #e5e7eb;
+        transition: all 0.2s ease;
+    }
+
+    .drop-zone:hover {
+        border-color: #3b82f6;
+        background-color: #f8fafc;
+    }

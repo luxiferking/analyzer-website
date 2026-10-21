@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PatternPilot — Equity Intraday</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        @keyframes pulse-live {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.1); }
+        }
+        .live-dot { animation: pulse-live 2s ease-in-out infinite; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+
+        .pick-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .pick-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .stock-row { transition: all 0.15s ease; }
+        .stock-row:hover { background: rgba(30, 41, 59, 0.5); }
+
+        .score-bar {
+            height: 4px;
+            border-radius: 2px;
+            transition: width 0.5s ease-out;
+        }
+
+        .glow-green { box-shadow: 0 0 20px rgba(16, 185, 129, 0.15); }
+        .glow-red { box-shadow: 0 0 20px rgba(244, 63, 94, 0.15); }
+
+        .spinner {
+            border: 3px solid rgba(148, 163, 184, 0.2);
+            border-top-color: #10b981;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 flex h-screen overflow-hidden">
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- SIDEBAR                                              -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <aside class="w-20 border-r border-slate-800 bg-slate-900 flex flex-col items-center py-6 shrink-0 z-20">
+        <div class="w-11 h-11 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center text-white mb-10 shadow-lg shadow-emerald-500/30">
+            <i class="fa-solid fa-plane-departure text-lg"></i>
+        </div>
+
+        <nav class="flex flex-col gap-6 w-full items-center">
+            <a href="index.html" class="text-slate-500 hover:text-slate-300 p-2.5 rounded-lg transition-all hover:bg-slate-800/50" title="Predictor">
+                <i class="fa-solid fa-house text-lg"></i>
+            </a>
+            <a href="options.html" class="text-slate-500 hover:text-slate-300 p-2.5 rounded-lg transition-all hover:bg-slate-800/50" title="Options">
+                <i class="fa-regular fa-file-lines text-lg"></i>
+            </a>
+            <a href="equity.html" class="text-emerald-400 bg-emerald-500/10 p-2.5 rounded-lg transition-colors relative" title="Equity Intraday">
+                <i class="fa-solid fa-chart-line text-lg"></i>
+                <div class="absolute -left-4 top-1/2 -translate-y-1/2 w-1 h-6 bg-emerald-500 rounded-r-md"></div>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- MAIN CONTENT                                         -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <main class="flex-1 flex flex-col bg-slate-950 relative overflow-y-auto">
+
+        <!-- ═══ Header ═══ -->
+        <header class="h-20 flex items-center justify-between px-8 bg-slate-900/70 border-b border-slate-800 backdrop-blur-md z-10 sticky top-0">
+            <div class="flex items-center gap-4">
+                <div id="marketStatus" class="flex items-center gap-2 bg-slate-800/80 px-3.5 py-2 rounded-full border border-slate-700">
+                    <div id="marketDot" class="w-2 h-2 rounded-full bg-slate-500"></div>
+                    <span id="marketStatusText" class="text-xs font-semibold text-slate-200">Connecting...</span>
+                    <span id="marketTime" class="text-xs text-slate-500"></span>
+                </div>
+
+                <div class="h-6 w-px bg-slate-700"></div>
+
+                <div class="flex items-center gap-2">
+                    <h1 class="text-xl font-bold text-white tracking-tight">Equity Intraday</h1>
+                    <span class="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Live</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="text-right hidden md:block">
+                    <p class="text-xs text-slate-500">Capital</p>
+                    <p class="text-sm font-bold text-white">₹5,000</p>
+                </div>
+                <button id="refreshBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 active:scale-95">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span class="hidden md:inline">Refresh</span>
+                </button>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-emerald-500 border-2 border-slate-800 shadow-lg cursor-pointer"></div>
+            </div>
+        </header>
+
+        <!-- ═══ Stats Bar ═══ -->
+        <div class="px-8 pt-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-4 backdrop-blur">
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Scanning</p>
+                        <i class="fa-solid fa-satellite-dish text-blue-400 text-sm"></i>
+                    </div>
+                    <p class="text-2xl font-bold text-white" id="statTotal">--</p>
+                    <p class="text-xs text-slate-500 mt-0.5">stocks</p>
+                </div>
+
+                <div class="bg-slate-900/70 border border-emerald-900/50 rounded-2xl p-4 backdrop-blur">
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="text-xs font-medium text-emerald-500 uppercase tracking-wide">Buy Signals</p>
+                        <i class="fa-solid fa-arrow-trend-up text-emerald-400 text-sm"></i>
+                    </div>
+                    <p class="text-2xl font-bold text-emerald-400" id="statBuys">--</p>
+                    <p class="text-xs text-slate-500 mt-0.5">actionable</p>
+                </div>
+
+                <div class="bg-slate-900/70 border border-rose-900/50 rounded-2xl p-4 backdrop-blur">
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="text-xs font-medium text-rose-500 uppercase tracking-wide">Sell Signals</p>
+                        <i class="fa-solid fa-arrow-trend-down text-rose-400 text-sm"></i>
+                    </div>
+                    <p class="text-2xl font-bold text-rose-400" id="statSells">--</p>
+                    <p class="text-xs text-slate-500 mt-0.5">actionable</p>
+                </div>
+
+                <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-4 backdrop-blur">
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Waiting</p>
+                        <i class="fa-solid fa-hourglass-half text-yellow-400 text-sm"></i>
+                    </div>
+                    <p class="text-2xl font-bold text-yellow-400" id="statWait">--</p>
+                    <p class="text-xs text-slate-500 mt-0.5">no setup</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ Main Grid ═══ -->
+        <div class="flex-1 p-8 grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-[1600px] w-full mx-auto">
+
+            <!-- ═══ LEFT: TOP PICKS ═══ -->
+            <div class="lg:col-span-2 flex flex-col gap-5">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20">
+                            <i class="fa-solid fa-fire text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-white tracking-tight">Top Picks</h2>
+                            <p class="text-xs text-slate-500">Best trades right now</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="text-slate-500">Auto-refresh:</span>
+                        <span class="text-emerald-400 font-semibold">60s</span>
+                    </div>
+                </div>
+
+                <div id="topPicks" class="flex flex-col gap-4">
+                    <!-- Loading state -->
+                    <div class="bg-slate-900/50 border border-slate-800 border-dashed rounded-2xl p-12 text-center">
+                        <div class="spinner mx-auto mb-4"></div>
+                        <p class="text-slate-400">Connecting to backend...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ RIGHT: ALL STOCKS ═══ -->
+            <div class="lg:col-span-1 flex flex-col gap-5">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                            <i class="fa-solid fa-list text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-white tracking-tight">All Stocks</h2>
+                            <p class="text-xs text-slate-500" id="stockCountText">-- stocks</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                    <div class="px-4 py-3 border-b border-slate-800 bg-slate-900/70">
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                            <input type="text" id="searchInput" placeholder="Search symbol..."
+                                class="w-full bg-slate-800/60 border border-slate-700 rounded-lg pl-9 pr-3 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 focus:bg-slate-800 placeholder-slate-500 transition-all">
+                        </div>
+                    </div>
+
+                    <div id="stockList" class="max-h-[700px] overflow-y-auto">
+                        <div class="p-6 text-center">
+                            <div class="spinner mx-auto mb-3" style="width: 24px; height: 24px; border-width: 2px;"></div>
+                            <p class="text-slate-500 text-sm">Loading stocks...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ═══ Footer ═══ -->
+        <footer class="px-8 py-4 border-t border-slate-800 bg-slate-900/50">
+            <div class="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-emerald-500"></i>
+                    <span>Risk-managed intraday trading · Max 3% per trade</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span><i class="fa-solid fa-clock text-slate-600"></i> Square off by 3:00 PM</span>
+                    <span class="text-slate-600">·</span>
+                    <span>Data from Upstox</span>
+                </div>
+            </div>
+        </footer>
+
+    </main>
+
+    <script>
+    // ═══════════════════════════════════════════════════
+    //  API CONFIG
+    // ═══════════════════════════════════════════════════
+    const API_BASE = "http://127.0.0.1:8002";
+
+    let ALL_STOCKS = [];
+    let TOP_PICKS = [];
+    let MARKET_OPEN = false;
+    let autoRefreshTimer = null;
+
+    // ═══════════════════════════════════════════════════
+    //  INIT
+    // ═══════════════════════════════════════════════════
+    document.addEventListener("DOMContentLoaded", () => {
+        console.log("🚀 Equity page loading...");
+        loadData();
+
+        // Search
+        document.getElementById("searchInput").addEventListener("input", (e) => {
+            renderStockList(e.target.value);
+        });
+
+        // Manual refresh
+        document.getElementById("refreshBtn").addEventListener("click", () => {
+            const btn = document.getElementById("refreshBtn");
+            const icon = btn.querySelector("i");
+            icon.classList.add("fa-spin");
+            loadData().finally(() => {
+                setTimeout(() => icon.classList.remove("fa-spin"), 500);
+            });
+        });
+
+        // Auto-refresh every 60s
+        autoRefreshTimer = setInterval(() => {
+            console.log("🔄 Auto-refresh");
+            loadData(true);
+        }, 60000);
+
+        // Update clock every second
+        setInterval(updateClock, 1000);
+        updateClock();
+    });
+
+    function updateClock() {
+        const now = new Date();
+        const time = now.toLocaleTimeString('en-IN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+            timeZone: 'Asia/Kolkata'
+        });
+        const el = document.getElementById("marketTime");
+        if (el) el.textContent = `· ${time}`;
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  MAIN DATA LOADER
+    // ═══════════════════════════════════════════════════
+    async function loadData(silent = false) {
+        try {
+            // 1. Check market status
+            const statusRes = await fetch(`${API_BASE}/api/equity/status`);
+            if (!statusRes.ok) throw new Error(`Status API error: ${statusRes.status}`);
+            const status = await statusRes.json();
+
+            console.log("📊 Market status:", status);
+
+            MARKET_OPEN = status.market_open;
+            updateMarketIndicator(status);
+
+            if (!status.market_open) {
+                showMarketClosedScreen(status.message);
+                return;
+            }
+
+            // 2. Market open — fetch scan
+            if (!silent) {
+                showLoadingState();
+            }
+
+            const scanRes = await fetch(`${API_BASE}/api/equity/scan?limit=5`);
+            if (!scanRes.ok) throw new Error(`Scan API error: ${scanRes.status}`);
+
+            const data = await scanRes.json();
+            console.log("📈 Scan data:", data);
+
+            if (data.status === "error") {
+                throw new Error(data.market_status || "Scan failed");
+            }
+
+            ALL_STOCKS = data.stocks || [];
+            TOP_PICKS = data.top_picks || [];
+
+            // 3. Render
+            renderTopPicks();
+            renderStockList();
+
+            // 4. Update stats
+            updateStats();
+
+        } catch (err) {
+            console.error("❌ Load error:", err);
+            if (!silent) {
+                showErrorScreen(err.message);
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  MARKET INDICATOR
+    // ═══════════════════════════════════════════════════
+    function updateMarketIndicator(status) {
+        const dot = document.getElementById("marketDot");
+        const text = document.getElementById("marketStatusText");
+
+        if (status.market_open) {
+            dot.className = "w-2 h-2 rounded-full bg-emerald-500 live-dot";
+            text.textContent = "Market Live";
+            text.className = "text-xs font-semibold text-emerald-300";
+        } else {
+            dot.className = "w-2 h-2 rounded-full bg-red-500";
+            text.textContent = "Market Closed";
+            text.className = "text-xs font-semibold text-rose-300";
+        }
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  STATES
+    // ═══════════════════════════════════════════════════
+    function showLoadingState() {
+        document.getElementById("topPicks").innerHTML = `
+            <div class="bg-slate-900/50 border border-slate-800 border-dashed rounded-2xl p-12 text-center">
+                <div class="spinner mx-auto mb-4"></div>
+                <p class="text-slate-400">Scanning 100 stocks...</p>
+                <p class="text-xs text-slate-500 mt-2">Yeh 1-2 minute lega</p>
+            </div>
+        `;
+    }
+
+    function showMarketClosedScreen(message) {
+        document.getElementById("topPicks").innerHTML = `
+            <div class="bg-slate-900/50 border border-red-900/50 rounded-2xl p-12 text-center fade-in">
+                <div class="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mx-auto mb-4">
+                    <i class="fa-solid fa-clock text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">Market Closed</h3>
+                <p class="text-slate-400 mb-4">${message}</p>
+                <div class="inline-block bg-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300">
+                    <i class="fa-solid fa-lightbulb text-yellow-500"></i>
+                    Safe trading window: <strong>9:30 AM – 3:00 PM IST</strong>
+                </div>
+                <p class="text-xs text-slate-500 mt-4">
+                    <i class="fa-solid fa-info-circle mr-1"></i>
+                    Kal subah 9:30 AM ke baad refresh karo
+                </p>
+            </div>
+        `;
+
+        document.getElementById("stockList").innerHTML = `
+            <div class="p-6 text-center text-slate-500 text-sm">
+                <i class="fa-solid fa-moon text-2xl mb-2 block"></i>
+                Market closed
+            </div>
+        `;
+
+        // Reset stats
+        document.getElementById("statTotal").textContent = "--";
+        document.getElementById("statBuys").textContent = "--";
+        document.getElementById("statSells").textContent = "--";
+        document.getElementById("statWait").textContent = "--";
+        document.getElementById("stockCountText").textContent = "Market closed";
+    }
+
+    function showErrorScreen(msg) {
+        document.getElementById("topPicks").innerHTML = `
+            <div class="bg-slate-900/50 border border-red-900/50 rounded-2xl p-8 text-center fade-in">
+                <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fa-solid fa-exclamation-triangle text-2xl text-red-500"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Connection Error</h3>
+                <p class="text-slate-400 text-sm">${msg}</p>
+                <p class="text-xs text-slate-500 mt-3">Backend: ${API_BASE}</p>
+                <p class="text-xs text-slate-500 mt-1">
+                    <i class="fa-solid fa-circle-info mr-1"></i>
+                    Make sure backend is running: python main.py
+                </p>
+                <button onclick="loadData()" class="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                    <i class="fa-solid fa-rotate mr-1"></i> Retry
+                </button>
+            </div>
+        `;
+
+        document.getElementById("stockList").innerHTML = `
+            <div class="p-6 text-center text-slate-500 text-sm">Error loading</div>
+        `;
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  RENDER TOP PICKS
+    // ═══════════════════════════════════════════════════
+    function renderTopPicks() {
+        const container = document.getElementById("topPicks");
+        container.innerHTML = "";
+
+        if (!TOP_PICKS || TOP_PICKS.length === 0) {
+            container.innerHTML = `
+                <div class="bg-slate-900/50 border border-slate-800 border-dashed rounded-2xl p-12 text-center">
+                    <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center text-slate-600 mx-auto mb-4">
+                        <i class="fa-solid fa-magnifying-glass text-2xl"></i>
+                    </div>
+                    <p class="text-slate-400 font-medium">No actionable signals</p>
+                    <p class="text-slate-500 text-sm mt-2">Wait for clearer setup or stronger volume</p>
+                </div>
+            `;
+            return;
+        }
+
+        TOP_PICKS.forEach((p, i) => {
+            container.appendChild(createPickCard(p, i + 1));
+        });
+    }
+
+    function createPickCard(p, rank) {
+        const isBuy = p.action === "BUY";
+        const accent = isBuy ? "emerald" : "rose";
+        const glow = isBuy ? "glow-green" : "glow-red";
+
+        const card = document.createElement("div");
+        card.className = `pick-card bg-slate-900 border border-slate-800 rounded-2xl p-5 ${glow} cursor-pointer fade-in`;
+
+        // MTF badges
+        const mtf = p.mtf_details || {};
+        const mtfHtml = Object.entries(mtf).map(([k, v]) => {
+            const c = v === "BULLISH" ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/30" :
+                     v === "BEARISH" ? "text-rose-400 bg-rose-500/10 border-rose-500/30" :
+                     "text-slate-400 bg-slate-800 border-slate-700";
+            return `<span class="${c} text-[10px] font-bold px-2 py-0.5 rounded uppercase border">${k}·${v[0]}</span>`;
+        }).join(" ");
+
+        const scoreBarWidth = Math.min(Math.abs(p.score) * 2, 100);
+
+        card.innerHTML = `
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-${accent}-500/15 rounded-xl flex items-center justify-center border border-${accent}-500/30">
+                        <span class="text-${accent}-400 font-bold text-sm">#${rank}</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-lg font-bold text-white tracking-tight">${p.symbol}</h3>
+                            <span class="bg-${accent}-500/20 text-${accent}-400 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase">${p.strength || "MODERATE"}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">Spot: <span class="text-slate-300 font-mono">₹${p.spot}</span></p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="flex items-center gap-1 justify-end mb-1">
+                        <i class="fa-solid ${isBuy ? 'fa-arrow-up' : 'fa-arrow-down'} text-${accent}-400"></i>
+                        <span class="text-lg font-bold text-${accent}-400">${p.action}</span>
+                    </div>
+                    <p class="text-xs text-slate-500">R:R <span class="text-white font-semibold">1:${p.rr || "?"}</span></p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-3 text-center">
+                    <p class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Entry</p>
+                    <p class="text-sm font-bold text-white font-mono">₹${p.entry || "--"}</p>
+                </div>
+                <div class="bg-rose-500/5 border border-rose-500/20 rounded-xl p-3 text-center">
+                    <p class="text-[10px] text-rose-400 uppercase font-semibold mb-1">Stop Loss</p>
+                    <p class="text-sm font-bold text-rose-400 font-mono">₹${p.sl || "--"}</p>
+                </div>
+                <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-center">
+                    <p class="text-[10px] text-emerald-400 uppercase font-semibold mb-1">Target</p>
+                    <p class="text-sm font-bold text-emerald-400 font-mono">₹${p.target || "--"}</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs mb-4 pb-4 border-b border-slate-800">
+                <div class="flex items-center gap-4">
+                    <span class="text-slate-400"><i class="fa-solid fa-layer-group text-slate-600 mr-1"></i>${p.shares || 0} shares</span>
+                    <span class="text-slate-400"><i class="fa-solid fa-indian-rupee-sign text-slate-600 mr-1"></i>${p.cost || 0}</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-emerald-400 font-semibold">+₹${p.profit || 0}</span>
+                    <span class="text-rose-400 font-semibold">-₹${p.risk || 0}</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-[10px] text-slate-500 uppercase font-semibold">Timeframes</span>
+                <div class="flex items-center gap-1">${mtfHtml}</div>
+            </div>
+
+            <div class="space-y-1.5 mb-3">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-500">Candle</span>
+                    <span class="${p.candle_score > 0 ? 'text-emerald-400' : 'text-rose-400'} font-mono">${p.candle_score > 0 ? '+' : ''}${p.candle_score || 0}</span>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-500">Chart</span>
+                    <span class="${p.chart_score > 0 ? 'text-emerald-400' : 'text-rose-400'} font-mono">${p.chart_score > 0 ? '+' : ''}${p.chart_score || 0}</span>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-500">Volume</span>
+                    <span class="${p.vol_score > 0 ? 'text-emerald-400' : 'text-rose-400'} font-mono">${p.vol_score > 0 ? '+' : ''}${p.vol_score || 0}</span>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-500">Multi-TF</span>
+                    <span class="${p.mtf_score > 0 ? 'text-emerald-400' : 'text-rose-400'} font-mono">${p.mtf_score > 0 ? '+' : ''}${p.mtf_score || 0}</span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="flex items-center justify-between text-xs mb-1.5">
+                    <span class="text-slate-500 font-semibold">TOTAL SCORE</span>
+                    <span class="text-${accent}-400 font-bold font-mono text-sm">${p.score > 0 ? '+' : ''}${p.score}</span>
+                </div>
+                <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div class="score-bar bg-gradient-to-r from-${accent}-500 to-${accent}-400" style="width: ${scoreBarWidth}%"></div>
+                </div>
+            </div>
+
+            ${p.patterns && p.patterns.length > 0 ? `
+                <div class="pt-3 border-t border-slate-800">
+                    <div class="flex flex-wrap gap-1.5">
+                        ${p.patterns.slice(0, 3).map(pat =>
+                            `<span class="text-[10px] bg-slate-800 border border-slate-700 text-slate-300 px-2 py-1 rounded-md">${pat}</span>`
+                        ).join("")}
+                    </div>
+                </div>
+            ` : ""}
+        `;
+
+        card.onclick = () => showDetail(p);
+        return card;
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  RENDER STOCK LIST
+    // ═══════════════════════════════════════════════════
+    function renderStockList(filter = "") {
+        const container = document.getElementById("stockList");
+        const q = filter.toUpperCase().trim();
+
+        const filtered = ALL_STOCKS.filter(s =>
+            !q || s.symbol.includes(q)
+        );
+
+        container.innerHTML = "";
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="p-6 text-center text-slate-500 text-sm">
+                    <i class="fa-solid fa-magnifying-glass mb-2 block text-lg"></i>
+                    ${ALL_STOCKS.length === 0 ? "Market closed" : "No stocks found"}
+                </div>
+            `;
+            return;
+        }
+
+        filtered.forEach(s => {
+            const row = document.createElement("div");
+            row.className = "stock-row px-4 py-2.5 border-b border-slate-800/50 cursor-pointer flex items-center justify-between";
+            row.onclick = () => {
+                document.getElementById("searchInput").value = s.symbol;
+                renderStockList(s.symbol);
+            };
+
+            row.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                        ${s.symbol.substring(0, 2)}
+                    </div>
+                    <span class="text-sm font-semibold text-slate-200">${s.symbol}</span>
+                </div>
+                <div class="text-right">
+                    <span class="text-sm font-mono text-slate-300">₹${s.price.toLocaleString('en-IN')}</span>
+                </div>
+            `;
+            container.appendChild(row);
+        });
+
+        document.getElementById("stockCountText").textContent = `${filtered.length} stocks`;
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  STATS
+    // ═══════════════════════════════════════════════════
+    function updateStats() {
+        const buys = TOP_PICKS.filter(p => p.action === "BUY").length;
+        const sells = TOP_PICKS.filter(p => p.action === "SELL").length;
+
+        document.getElementById("statTotal").textContent = ALL_STOCKS.length;
+        document.getElementById("statBuys").textContent = buys;
+        document.getElementById("statSells").textContent = sells;
+        document.getElementById("statWait").textContent = Math.max(0, ALL_STOCKS.length - buys - sells);
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  DETAIL MODAL
+    // ═══════════════════════════════════════════════════
+    function showDetail(p) {
+        const isBuy = p.action === "BUY";
+        const accent = isBuy ? "emerald" : "rose";
+
+        const overlay = document.createElement("div");
+        overlay.className = "fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in";
+        overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+        overlay.innerHTML = `
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+                <div class="p-6 border-b border-slate-800 flex items-start justify-between sticky top-0 bg-slate-900 z-10">
+                    <div>
+                        <div class="flex items-center gap-3 mb-1">
+                            <h2 class="text-2xl font-bold text-white">${p.symbol}</h2>
+                            <span class="bg-${accent}-500/20 text-${accent}-400 text-xs font-bold px-2 py-1 rounded uppercase">${p.action}</span>
+                            <span class="bg-slate-800 text-slate-400 text-xs font-bold px-2 py-1 rounded uppercase">${p.strength || "MODERATE"}</span>
+                        </div>
+                        <p class="text-sm text-slate-400">Spot: <span class="text-white font-mono">₹${p.spot}</span></p>
+                    </div>
+                    <button onclick="this.closest('.fixed').remove()" class="text-slate-500 hover:text-white p-2">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="p-6 space-y-6">
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-center">
+                            <p class="text-xs text-slate-500 uppercase font-semibold mb-1">Entry</p>
+                            <p class="text-lg font-bold text-white font-mono">₹${p.entry || "--"}</p>
+                        </div>
+                        <div class="bg-rose-500/5 border border-rose-500/30 rounded-xl p-4 text-center">
+                            <p class="text-xs text-rose-400 uppercase font-semibold mb-1">Stop Loss</p>
+                            <p class="text-lg font-bold text-rose-400 font-mono">₹${p.sl || "--"}</p>
+                        </div>
+                        <div class="bg-emerald-500/5 border border-emerald-500/30 rounded-xl p-4 text-center">
+                            <p class="text-xs text-emerald-400 uppercase font-semibold mb-1">Target</p>
+                            <p class="text-lg font-bold text-emerald-400 font-mono">₹${p.target || "--"}</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800/30 border border-slate-700 rounded-xl p-4">
+                        <h3 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-calculator text-blue-400"></i> Position Sizing
+                        </h3>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div class="flex justify-between"><span class="text-slate-400">Shares</span><span class="text-white font-semibold">${p.shares || 0}</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Total Cost</span><span class="text-white font-semibold font-mono">₹${p.cost || 0}</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Profit @ Target</span><span class="text-emerald-400 font-semibold font-mono">+₹${p.profit || 0}</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Loss @ SL</span><span class="text-rose-400 font-semibold font-mono">-₹${p.risk || 0}</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">R:R Ratio</span><span class="text-white font-semibold">1:${p.rr || "?"}</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Risk %</span><span class="text-white font-semibold">${p.risk_pct || 0}%</span></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800/30 border border-slate-700 rounded-xl p-4">
+                        <h3 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-bar text-purple-400"></i> Score Breakdown
+                        </h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between"><span class="text-slate-400">Candlestick</span><span class="${p.candle_score > 0 ? 'text-emerald-400' : 'text-rose-400'} font-mono">${p.candle_score > 0 ? '+' : ''}${p.candle_score || 0}</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Chart</span><span class="${p.chart_score > 0 ? 'text-emerald-400' : 'text-rose-400'} font-mono">${p.chart_score > 0 ? '+' : ''}${p.chart_score || 0}</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Volume</span><span class="${p.vol_score > 0 ? 'text-emerald-400' : 'text-rose-400'} font-mono">${p.vol_score > 0 ? '+' : ''}${p.vol_score || 0}</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Multi-TF</span><span class="${p.mtf_score > 0 ? 'text-emerald-400' : 'text-rose-400'} font-mono">${p.mtf_score > 0 ? '+' : ''}${p.mtf_score || 0}</span></div>
+                            <div class="flex justify-between pt-2 border-t border-slate-700"><span class="text-white font-bold">TOTAL</span><span class="text-${accent}-400 font-bold font-mono">${p.score > 0 ? '+' : ''}${p.score}</span></div>
+                        </div>
+                    </div>
+
+                    ${p.mtf_details && Object.keys(p.mtf_details).length > 0 ? `
+                        <div class="bg-slate-800/30 border border-slate-700 rounded-xl p-4">
+                            <h3 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-clock text-cyan-400"></i> Multi-Timeframe
+                            </h3>
+                            <div class="grid grid-cols-3 gap-2">
+                                ${Object.entries(p.mtf_details).map(([tf, dir]) => {
+                                    const c = dir === "BULLISH" ? "emerald" : dir === "BEARISH" ? "rose" : "slate";
+                                    return `<div class="bg-${c}-500/10 border border-${c}-500/30 rounded-lg p-3 text-center">
+                                        <p class="text-xs text-slate-400 mb-1">${tf}</p>
+                                        <p class="text-sm font-bold text-${c}-400">${dir}</p>
+                                    </div>`;
+                                }).join("")}
+                            </div>
+                        </div>
+                    ` : ""}
+
+                    ${p.patterns && p.patterns.length > 0 ? `
+                        <div class="bg-slate-800/30 border border-slate-700 rounded-xl p-4">
+                            <h3 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-shapes text-orange-400"></i> Detected Patterns
+                            </h3>
+                            <div class="flex flex-wrap gap-2">
+                                ${p.patterns.map(pat => `<span class="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg">${pat}</span>`).join("")}
+                            </div>
+                        </div>
+                    ` : ""}
+
+                    ${p.vol_obs && p.vol_obs.length > 0 ? `
+                        <div class="bg-slate-800/30 border border-slate-700 rounded-xl p-4">
+                            <h3 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-signal text-yellow-400"></i> Volume Analysis
+                            </h3>
+                            <ul class="space-y-1 text-sm text-slate-300">
+                                ${p.vol_obs.map(obs => `<li>• ${obs}</li>`).join("")}
+                            </ul>
+                        </div>
+                    ` : ""}
+                </div>
+
+                <div class="p-4 border-t border-slate-800 bg-slate-900/50 sticky bottom-0">
+                    <p class="text-xs text-slate-500 text-center">
+                        <i class="fa-solid fa-triangle-exclamation text-yellow-500 mr-1"></i>
+                        Educational analysis only. Not financial advice.
+                    </p>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+    }
+    </script>
+</body>
+</html>
