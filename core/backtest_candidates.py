@@ -1,0 +1,16 @@
+CANDIDATES = [
+    {"name": "DIVISLAB",   "key": "NSE_EQ|INE361B01024"},
+    {"name": "HCLTECH",    "key": "NSE_EQ|INE860A01027"},
+    {"name": "ADANIPORTS", "key": "NSE_EQ|INE742F01042"},
+    {"name": "GRASIM",     "key": "NSE_EQ|INE047A01021"},
+    {"name": "JSWSTEEL",   "key": "NSE_EQ|INE019A01038"},
+    {"name": "BAJAJ-AUTO", "key": "NSE_EQ|INE917I01010"},
+    {"name": "SIEMENS",    "key": "NSE_EQ|INE003A01024"},
+    {"name": "TCS",        "key": "NSE_EQ|INE467B01029"},
+    {"name": "ICICIBANK",  "key": "NSE_EQ|INE090A01021"},
+    {"name": "RELIANCE",   "key": "NSE_EQ|INE002A01018"},
+    {"name": "TITAN",      "key": "NSE_EQ|INE280A01028"},
+    {"name": "MARUTI",     "key": "NSE_EQ|INE585B01010"},
+    {"name": "ASIANPAINT", "key": "NSE_EQ|INE021A01026"},
+    {"name": "SUNPHARMA",  "key": "NSE_EQ|INE044A01036"},
+]
