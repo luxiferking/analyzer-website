@@ -34,8 +34,16 @@ document.addEventListener('DOMContentLoaded', () => {
             loadingState.classList.remove('flex');
 
             if (data.status === "success") {
-                resSymbol.innerText = data.symbol;
+                // 1. Combine Symbol + Strike + Type (e.g., NIFTY 22600 PE)
+                resSymbol.innerText = `${data.symbol} ${data.strike} ${data.option_type}`;
+
+                // 2. Set the Expiry Date
+                resExpiry.innerText = `Expiry: ${data.expiry}`;
+
+                // 3. Set the Action
                 resAction.innerText = `${data.action} (${data.strength})`;
+
+                // 4. Set Price Levels
                 resEntry.innerText = `₹${data.entry}`;
                 resStopLoss.innerText = `₹${data.stop_loss}`;
                 resTakeProfit.innerText = `₹${data.target}`;
